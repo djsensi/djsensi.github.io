@@ -19,8 +19,10 @@ function VinylModel({
   const ref = useRef<THREE.Group>(null)
   const wrapper = useRef<THREE.Group>(null)
   
-  const { scene } = useGLTF('./models/vinyl_single.glb') as any
+  // Cast useGLTF safely to navigate scene hierarchy
+  const { scene } = useGLTF('/models/vinyl_single.glb') as any
 
+  // Color adjustments
   useEffect(() => {
     if (!scene) return
     scene.traverse((child: any) => {
@@ -34,10 +36,12 @@ function VinylModel({
     })
   }, [scene])
 
+  // Tilt the record
   useEffect(() => {
     if (ref.current) ref.current.rotation.x = 0.45
   }, [])
 
+  // Apply shrink AFTER Bounds animation
   useEffect(() => {
     const t = setTimeout(() => {
       if (wrapper.current) {
@@ -70,6 +74,7 @@ function VinylModel({
     onSpeedChange(velocity.current)
   }
 
+  // Auto spin
   useEffect(() => {
     let frame: number
     const animate = () => {
@@ -110,6 +115,8 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
   const [spinning, setSpinning] = useState<boolean>(false)
   const [speed, setSpeed] = useState<number>(0)
   const [dragging, setDragging] = useState<boolean>(false)
+
+  // Track viewport boundary to force matrix recalculation below 768px
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false)
 
   useEffect(() => {
@@ -120,18 +127,17 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Clean, lightweight background audio system initialization
+  // Load audio
   useEffect(() => {
     const loadAudio = async () => {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
       audioCtx.current = new AudioContextClass()
-
-      await audioCtx.current.audioWorklet.addModule('./worklets/vinylProcessor.js')
+      await audioCtx.current.audioWorklet.addModule('/worklets/vinylProcessor.js')
 
       workletNode.current = new AudioWorkletNode(audioCtx.current, 'vinyl-processor')
       workletNode.current.connect(audioCtx.current.destination)
 
-      const res = await fetch('./assets/vinyl_loop.wav')
+      const res = await fetch('/assets/vinyl_loop.mp3')
       const arrayBuffer = await res.arrayBuffer()
       const buffer = await audioCtx.current.decodeAudioData(arrayBuffer)
 
@@ -142,15 +148,13 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
         buffer: samples
       })
 
-      // Start completely static to prevent initialization pop
-      workletNode.current.port.postMessage({ type: 'speed', speed: 0 })
       await audioCtx.current.resume()
     }
 
-    loadAudio().catch(err => console.error("Audio system load exception:", err))
+    loadAudio()
   }, [])
 
-  // Clear, direct speed communication block
+  // Speed control
   useEffect(() => {
     if (!workletNode.current) return
 
@@ -177,9 +181,7 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
   }, [speed, spinning, dragging])
 
   const handleClick = () => {
-    if (audioCtx.current?.state === 'suspended') {
-      audioCtx.current.resume()
-    }
+    audioCtx.current?.resume()
     setSpinning((prev) => !prev)
   }
 
@@ -189,13 +191,15 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
         width: '100%', 
         height: '100%', 
         cursor: dragging ? 'grabbing' : 'grab',
-        touchAction: 'none'
+        touchAction: 'none' // Locks mobile finger drag strictly to the model interaction
       }}
     >
+      {/* Changed handler to onClick for uniform desktop and mobile behavior */}
       <Canvas camera={{ fov: 20 }} onClick={handleClick}>
         <ambientLight intensity={1.2} />
         <directionalLight position={[5, 35, 5]} intensity={8.0} castShadow />
 
+        {/* Dynamic component key resets bounding-box math on layout snap points */}
         <Bounds fit clip margin={1.2} key={isMobile ? 'mobile' : 'desktop'}>
           <VinylModel
             spinning={spinning}
