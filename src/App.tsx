@@ -1,5 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useState,useRef, type ReactNode} from 'react'
 import Vinyl from '../components/vinyl'
+import type { VinylHandle } from '../components/vinyl'
+
 
 // --- Adaptable Section Title ---
 const SectionTitle = ({ children, theme }: { children: ReactNode; theme: 'club' | 'lounge' }) => (
@@ -145,6 +147,11 @@ const PhotoGallery = ({ theme }: { theme: 'club' | 'lounge' }) => {
 export default function App() {
   const [vinylLoaded, setVinylLoaded] = useState(false)
   const [theme, setTheme] = useState<'club' | 'lounge'>('club')
+  const [showThemes, setShowThemes] = useState(false);
+
+  const [audioFile, setAudioFile] = useState('/assets/vinyl_loop.mp3')
+  const vinylRef = useRef<VinylHandle>(null)
+
 
   const targetEmail = 'your-email@gmail.com'
   const secondEmail = 'management-email@gmail.com'
@@ -191,29 +198,81 @@ export default function App() {
 
       <div className="relative z-10 mx-auto flex max-w-3xl flex-col px-6 pb-24 pt-8 w-full">
         
-        {/* Navigation Bar with Fitted Mode Switcher */}
-        <nav className="mb-12 flex items-center justify-between text-xs tracking-widest font-mono text-zinc-500 uppercase border-b border-zinc-900 pb-4 w-full gap-4">
-          <span className="truncate">SENSI // BOOKING SITE</span>
-          
-          <div className="flex items-center bg-zinc-950 border border-zinc-800 p-0.5 rounded-full shrink-0 shadow-inner">
-            <button 
-              onClick={() => setTheme('club')}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
-                theme === 'club' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Club
-            </button>
-            <button 
-              onClick={() => setTheme('lounge')}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
-                theme === 'lounge' ? 'bg-amber-600 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Lounge
-            </button>
-          </div>
-        </nav>
+      <nav className="mb-12 flex items-center justify-between text-xs tracking-widest font-mono text-zinc-500 uppercase border-b border-zinc-900 pb-4 w-full gap-4">
+  <span className="truncate">SENSI // BOOKING SITE</span>
+
+  {/* Theme Selector */}
+  <div
+  className="
+    relative
+
+    /* Desktop */
+    translate-x-[-100px]
+
+    /* Mobile: reduce shift + lift upward */
+    sm:translate-x-[-100px]
+    translate-x-[-30px]
+    -mt-1
+  "
+>
+
+
+    
+<button
+  onClick={() => setShowThemes(prev => !prev)}
+  className="
+    bg-zinc-950 border border-zinc-800 rounded-full
+    font-bold tracking-widest uppercase shadow-inner
+    hover:text-white transition-all duration-300
+
+    /* Desktop */
+    px-5 py-2 text-[11px] whitespace-nowrap
+
+    /* Mobile overrides */
+    sm:px-5 sm:py-2 sm:text-[11px]
+    px-3 py-1.5 text-[10px]
+  "
+>
+  Choose Theme
+</button>
+
+
+
+    {/* CLUB Sleeve */}
+    <div
+      className={`theme-sleeve theme-club ${showThemes ? 'active' : ''}`}
+      onClick={() => {
+        vinylRef.current?.stop()
+        vinylRef.current?.reset()
+        setTheme('club')
+        setAudioFile('/assets/vinyl_loop.mp3')
+        setShowThemes(false)
+      }}
+    >
+      <img src="/assets/record_theme_club.png" alt="club sleeve" />
+      <span className="theme-label">Club</span>
+    </div>
+
+    {/* LOUNGE Sleeve */}
+    <div
+      className={`theme-sleeve theme-lounge ${showThemes ? 'active' : ''}`}
+      onClick={() => {
+        vinylRef.current?.stop()
+        vinylRef.current?.reset()
+        setTheme('lounge')
+        setAudioFile('/assets/vinyl_loop2.mp3')
+        setShowThemes(false)
+      }}
+    >
+      <img src="/assets/record_theme_lounge.png" alt="lounge sleeve" />
+      <span className="theme-label">Lounge</span>
+    </div>
+
+  </div>
+</nav>
+
+
+
 
         {/* Identity Block */}
         <header className="mb-12 flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-6 w-full">
@@ -250,26 +309,51 @@ export default function App() {
     [ Interactive Platform: Click or Drag to Play ]
   </div>
 
+  {/* Turntable */}
   <div className="w-full max-w-[640px] md:max-w-[900px] aspect-[900/500] relative brightness-[0.8] contrast-[1.1]">
-    <img src="/assets/turntable_base.png" alt="Base" className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0" />
+    <img
+      src="/assets/turntable_base.png"
+      alt="Base"
+      className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+    />
+
     <div className="absolute left-[17.5%] top-[-6%] w-[55%] h-[100%] z-10 flex items-center justify-center">
-      <Vinyl onReady={() => setVinylLoaded(true)} />
+      <Vinyl
+        ref={vinylRef}
+        audioFile={audioFile}
+        onReady={() => setVinylLoaded(true)}
+      />
     </div>
+
     {vinylLoaded && (
-      <img src="/assets/tonearm.png" alt="Tonearm" className="absolute left-[31%] top-[2.2%] w-[55%] h-[70%] object-contain pointer-events-none z-20 opacity-0 animate-tonearmFade" />
+      <img
+        src="/assets/tonearm.png"
+        alt="Tonearm"
+        className="absolute left-[31%] top-[2.2%] w-[55%] h-[70%] object-contain pointer-events-none z-20 opacity-0 animate-tonearmFade"
+      />
     )}
   </div>
 
   {/* Refined Credit Placement */}
-  <div className="mt-8 pt-4 border-t border-zinc-900/50 text-center text-[9px] text-zinc-600 uppercase tracking-widest max-w-md leading-relaxed opacity-60">
+  <div className="mt-4 pt-4 border-t border-zinc-900/50 text-center text-[9px] text-zinc-600 uppercase tracking-widest max-w-md leading-relaxed opacity-98">
     <p>
-      3D Model: “Vinyl Single” by mikedludlam (<a href="https://skfb.ly/oxIvC" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">CC BY 4.0</a>)
+      3D Model: “Vinyl Single” by mikedludlam (
+      <a
+        href="https://skfb.ly/oxIvC"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline hover:text-white transition-colors"
+      >
+        CC BY 4.0
+      </a>
+      )
     </p>
     <p className="mt-1">
-      Implementation, Tonearm Design, and Audio Engineering by DJ Sensi.
+      Implementation, Tonearm Design, Music Composition and Audio Touch Engineering by DJ Sensi.
     </p>
   </div>
 </div>
+
         <main className="flex flex-col gap-14 mt-12 w-full">
           
           {/* Photo Gallery Section */}
@@ -283,17 +367,18 @@ export default function App() {
             <SectionTitle theme={theme}>The Sound</SectionTitle>
             <div className="text-base text-zinc-300 leading-relaxed space-y-4 font-normal">
             <p>With over 20 years of experience behind the decks, DJ Sensi’s sound is deeply rooted in the foundations of Hip Hop, Funk, and Soul. 
-              His vinyl-driven approach seamlessly bridges these genres with the high-energy pulse of Jungle and Drum & Bass. Over the years, sharing stages with legends such as Afrika Bambaataa, Wu-Tang Clan (Killa Beez), DJ Hype, Krafty Kuts, DJ Yoda, and 5× World DMC Champion DJ Craze.</p>
-  
-  <p>His musical journey has taken him across the globe, including an international tour with Eminem’s super-group, 
-    Slaughterhouse—featuring Royce Da 5’9, Joe Budden, Joell Ortiz, and Crooked I—as well as extensive performances throughout Europe, the UK, and South-East Asia.</p>
-  
-  <p>Versatility is the hallmark of his craft. Whether holding down a vibrant club set or curating a sophisticated vibe in a lounge or brewery setting, Sensi moves between genres with ease. He maintains a deep, lifelong immersion in the Jungle scene while consistently keeping his Funk and Soul roots at the forefront of his performance.</p>
-  
-  <p>This dedication led him to become one half of Sensi Warriors, a high-energy jungle-focused duo that supported industry heavyweights including Mickey Finn, General Levy, Aphrodite, and Ed Solo.</p>
-  
-  <p>Today, Sensi continues to evolve while returning to his musical roots. Armed with sharp technical scratching, seamless mixing, and an instinctive ability to read any crowd, he remains a master of moving dancefloors wherever he plays.</p>
-  
+His vinyl-driven approach seamlessly bridges these genres with the high-energy pulse of Jungle and Drum & Bass. Over the years, sharing stages with legends such as Afrika Bambaataa, Wu-Tang Clan (Killa Beez), DJ Hype, Krafty Kuts, DJ Yoda, and 5× World DMC Champion DJ Craze.</p>
+
+<p>One of the standout moments in his career came when he was invited as Scribe’s (NZ first artist to go platinum) guest DJ, joining the Australian tour and performing in Melbourne. This milestone further cemented his reputation as a versatile and respected performer.</p>
+
+<p>His musical journey has taken him across the globe, including an international tour with Eminem’s super-group Slaughterhouse—featuring Royce Da 5’9, Joe Budden, Joell Ortiz, and Crooked I—as well as extensive performances throughout Europe, the UK, and South-East Asia.</p>
+
+<p>Versatility is the hallmark of his craft. Whether holding down a vibrant club set or curating a sophisticated vibe in a lounge or brewery setting, Sensi moves between genres with ease. He maintains a deep, lifelong immersion in the Jungle scene while consistently keeping his Funk and Soul roots at the forefront of his performance.</p>
+
+<p>This dedication led him to become one half of Sensi Warriors, a high-energy jungle-focused duo that supported industry heavyweights including Mickey Finn, General Levy, Aphrodite, and Ed Solo.</p>
+
+<p>Today, Sensi continues to evolve while returning to his musical roots. Armed with sharp technical scratching, seamless mixing, and an instinctive ability to read any crowd, he remains a master of moving dancefloors wherever he plays.</p>
+
   <p className={`text-sm font-mono uppercase tracking-wide border-t border-zinc-900/80 pt-4 transition-colors duration-500 ${
     theme === 'club' ? 'text-fuchsia-400' : 'text-amber-400'
   }`}>

@@ -64,3 +64,114 @@ body,
     -webkit-text-stroke: 4px rgba(7, 7, 7, 0.946);
 }
 }
+@layer components {
+  .next-track-btn {
+    @apply fixed top-1/2 -translate-y-1/2 right-0 
+           text-gray-300 text-3xl cursor-pointer 
+           opacity-40 transition-all duration-300 
+           select-none pr-2;
+  }
+
+  .next-track-btn:hover {
+    @apply opacity-100 right-2;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
+  }
+}
+
+/* --- SHARED SLEEVE CONTAINER --- */
+.theme-sleeve {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%) translateX(0);
+  width: 90px;
+  height: 50px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- IMAGE SLIDES LEFT → RIGHT --- */
+.theme-sleeve img {
+  height: 100%;
+  width: auto;
+  transform: translateX(-100px);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- CENTERED LABEL --- */
+.theme-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: white;
+  text-shadow: 0 0 4px black;
+}
+
+/* --- CLICK ACTIVATION --- */
+.theme-sleeve.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- DESKTOP BEHAVIOR --- */
+.theme-club.active {
+  transform: translateY(-50%) translateX(20px);
+  z-index: 20;
+}
+
+.theme-club.active img {
+  transform: translateX(0);
+}
+
+.theme-lounge.active {
+  transform: translateY(-50%) translateX(60px);
+  z-index: 10;
+}
+
+.theme-lounge.active img {
+  transform: translateX(0);
+}
+
+.theme-lounge.active:hover {
+  transform: translateY(-50%) translateX(90px);
+}
+
+/* --- MOBILE BEHAVIOR (UNDER BUTTON) --- */
+@media (max-width: 640px) {
+
+  .theme-sleeve {
+    top: calc(100% + 10px);
+    left: 0;
+    transform: translateY(0) translateX(0);
+  }
+
+  .theme-sleeve img {
+    transform: translateX(-100px);
+  }
+
+  .theme-club.active {
+    transform: translateY(0) translateX(10px);
+  }
+
+  /* ⭐ Lounge more exposed BEFORE hover */
+  .theme-lounge.active {
+    transform: translateY(0) translateX(70px); /* ← increased from 40px */
+  }
+
+  .theme-lounge.active img {
+    transform: translateX(0);
+  }
+
+  .theme-lounge.active:hover {
+    transform: translateY(0) translateX(80px);
+  }
+}

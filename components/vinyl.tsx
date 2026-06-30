@@ -1,7 +1,12 @@
 import { Canvas, ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Center, Bounds } from '@react-three/drei'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react'
 import * as THREE from 'three'
+
+export interface VinylHandle {
+  stop: () => void
+  reset: () => void
+}
 
 interface VinylModelProps {
   onSpeedChange: (speed: number) => void
@@ -14,7 +19,7 @@ function VinylModel({
   onSpeedChange,
   spinning,
   setDragging,
-  onReady = () => {}
+  onReady = () => {},
 }: VinylModelProps) {
   const ref = useRef<THREE.Group>(null)
   const wrapper = useRef<THREE.Group>(null)
@@ -106,12 +111,38 @@ function VinylModel({
 
 interface VinylProps {
   onReady?: () => void
+  audioFile:string
 }
 
-export default function Vinyl({ onReady = () => {} }: VinylProps) {
+const Vinyl = forwardRef<VinylHandle, VinylProps>(function Vinyl(
+  { onReady = () => {}, audioFile },
+  ref
+) {
   const audioCtx = useRef<AudioContext | null>(null)
   const workletNode = useRef<AudioWorkletNode | null>(null)
 
+  useImperativeHandle(ref, () => ({
+    stop() {
+      if (audioCtx.current) {
+        audioCtx.current.suspend()
+      }
+      if (workletNode.current) {
+        workletNode.current.port.postMessage({
+          type: 'speed',
+          speed: 0
+        })
+      }
+    },
+  
+    reset() {
+      setSpinning(false)
+      setSpeed(0)
+      setDragging(false)
+    }
+  }))
+  
+
+  
   const [spinning, setSpinning] = useState<boolean>(false)
   const [speed, setSpeed] = useState<number>(0)
   const [dragging, setDragging] = useState<boolean>(false)
@@ -137,7 +168,7 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
       workletNode.current = new AudioWorkletNode(audioCtx.current, 'vinyl-processor')
       workletNode.current.connect(audioCtx.current.destination)
 
-      const res = await fetch('/assets/vinyl_loop.mp3')
+      const res = await fetch(audioFile)
       const arrayBuffer = await res.arrayBuffer()
       const buffer = await audioCtx.current.decodeAudioData(arrayBuffer)
 
@@ -152,7 +183,7 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
     }
 
     loadAudio()
-  }, [])
+  }, [audioFile])
 
   // Speed control
   useEffect(() => {
@@ -191,15 +222,13 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
         width: '100%', 
         height: '100%', 
         cursor: dragging ? 'grabbing' : 'grab',
-        touchAction: 'none' // Locks mobile finger drag strictly to the model interaction
+        touchAction: 'none'
       }}
     >
-      {/* Changed handler to onClick for uniform desktop and mobile behavior */}
       <Canvas camera={{ fov: 20 }} onClick={handleClick}>
         <ambientLight intensity={1.2} />
         <directionalLight position={[5, 35, 5]} intensity={8.0} castShadow />
 
-        {/* Dynamic component key resets bounding-box math on layout snap points */}
         <Bounds fit clip margin={1.2} key={isMobile ? 'mobile' : 'desktop'}>
           <VinylModel
             spinning={spinning}
@@ -218,4 +247,5 @@ export default function Vinyl({ onReady = () => {} }: VinylProps) {
       </Canvas>
     </div>
   )
-}
+})
+export default Vinyl
