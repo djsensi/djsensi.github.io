@@ -3,9 +3,13 @@ import { OrbitControls, useGLTF, Center, Bounds } from '@react-three/drei'
 import { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react'
 import * as THREE from 'three'
 
+// Audio engine (persistent)
+import { initVinylEngine, startVinyl, setSpeed, resetVinyl, fadeOut } from "../audio/vinylEngine"
+
 export interface VinylHandle {
   stop: () => void
   reset: () => void
+  fadeOut: () => void
 }
 
 interface VinylModelProps {
@@ -23,11 +27,8 @@ function VinylModel({
 }: VinylModelProps) {
   const ref = useRef<THREE.Group>(null)
   const wrapper = useRef<THREE.Group>(null)
-  
-  // Cast useGLTF safely to navigate scene hierarchy
   const { scene } = useGLTF('/models/vinyl_single.glb') as any
 
-  // Color adjustments
   useEffect(() => {
     if (!scene) return
     scene.traverse((child: any) => {
@@ -41,12 +42,10 @@ function VinylModel({
     })
   }, [scene])
 
-  // Tilt the record
   useEffect(() => {
     if (ref.current) ref.current.rotation.x = 0.45
   }, [])
 
-  // Apply shrink AFTER Bounds animation
   useEffect(() => {
     const t = setTimeout(() => {
       if (wrapper.current) {
@@ -54,14 +53,12 @@ function VinylModel({
         onReady()
       }
     }, 60)
-
     return () => clearTimeout(t)
   }, [onReady])
 
   const velocity = useRef<number>(0)
 
   const onPointerDown = () => setDragging(true)
-
   const onPointerUp = () => {
     setDragging(false)
     velocity.current = 0
@@ -70,16 +67,12 @@ function VinylModel({
 
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     if (!ref.current || !e.buttons) return
-
     const raw = e.movementX * 0.004
     velocity.current = velocity.current * 0.8 + raw * 0.2
-
     ref.current.rotation.y += velocity.current
-
     onSpeedChange(velocity.current)
   }
 
-  // Auto spin
   useEffect(() => {
     let frame: number
     const animate = () => {
@@ -110,117 +103,72 @@ function VinylModel({
 }
 
 interface VinylProps {
+  audioFile: string
   onReady?: () => void
-  audioFile:string
 }
 
 const Vinyl = forwardRef<VinylHandle, VinylProps>(function Vinyl(
-  { onReady = () => {}, audioFile },
+  { audioFile, onReady = () => {} },
   ref
 ) {
-  const audioCtx = useRef<AudioContext | null>(null)
-  const workletNode = useRef<AudioWorkletNode | null>(null)
+  const [spinning, setSpinning] = useState(false)
+  const [speed, setSpeedState] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  )
 
   useImperativeHandle(ref, () => ({
     stop() {
-      if (audioCtx.current) {
-        audioCtx.current.suspend()
-      }
-      if (workletNode.current) {
-        workletNode.current.port.postMessage({
-          type: 'speed',
-          speed: 0
-        })
-      }
+      resetVinyl()
     },
-  
     reset() {
       setSpinning(false)
-      setSpeed(0)
+      setSpeedState(0)
       setDragging(false)
+      resetVinyl()
+    },
+    fadeOut() {
+      fadeOut()
     }
   }))
-  
 
-  
-  const [spinning, setSpinning] = useState<boolean>(false)
-  const [speed, setSpeed] = useState<number>(0)
-  const [dragging, setDragging] = useState<boolean>(false)
-
-  // Track viewport boundary to force matrix recalculation below 768px
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false)
+  // Load new track buffer WITHOUT rebuilding the audio graph
+  useEffect(() => {
+    initVinylEngine(audioFile)
+  }, [audioFile])
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Load audio
-  useEffect(() => {
-    const loadAudio = async () => {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
-      audioCtx.current = new AudioContextClass()
-      await audioCtx.current.audioWorklet.addModule('/worklets/vinylProcessor.js')
-
-      workletNode.current = new AudioWorkletNode(audioCtx.current, 'vinyl-processor')
-      workletNode.current.connect(audioCtx.current.destination)
-
-      const res = await fetch(audioFile)
-      const arrayBuffer = await res.arrayBuffer()
-      const buffer = await audioCtx.current.decodeAudioData(arrayBuffer)
-
-      const samples = new Float32Array(buffer.getChannelData(0))
-
-      workletNode.current.port.postMessage({
-        type: 'buffer',
-        buffer: samples
-      })
-
-      await audioCtx.current.resume()
-    }
-
-    loadAudio()
-  }, [audioFile])
-
   // Speed control
   useEffect(() => {
-    if (!workletNode.current) return
-
     if (dragging) {
-      workletNode.current.port.postMessage({
-        type: 'speed',
-        speed: Math.max(-1.3, Math.min(1.3, speed))
-      })
+      setSpeed(Math.max(-1.3, Math.min(1.3, speed)))
       return
     }
 
     if (spinning) {
-      workletNode.current.port.postMessage({
-        type: 'speed',
-        speed: 1
-      })
+      setSpeed(1)
       return
     }
 
-    workletNode.current.port.postMessage({
-      type: 'speed',
-      speed: 0
-    })
+    setSpeed(0)
   }, [speed, spinning, dragging])
 
-  const handleClick = () => {
-    audioCtx.current?.resume()
-    setSpinning((prev) => !prev)
+  const handleClick = async () => {
+    await startVinyl()
+    setSpinning(prev => !prev)
   }
 
   return (
-    <div 
-      style={{ 
-        width: '100%', 
-        height: '100%', 
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none'
       }}
@@ -232,7 +180,7 @@ const Vinyl = forwardRef<VinylHandle, VinylProps>(function Vinyl(
         <Bounds fit clip margin={1.2} key={isMobile ? 'mobile' : 'desktop'}>
           <VinylModel
             spinning={spinning}
-            onSpeedChange={setSpeed}
+            onSpeedChange={setSpeedState}
             setDragging={setDragging}
             onReady={onReady}
           />
@@ -248,4 +196,5 @@ const Vinyl = forwardRef<VinylHandle, VinylProps>(function Vinyl(
     </div>
   )
 })
+
 export default Vinyl

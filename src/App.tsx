@@ -1,6 +1,7 @@
 import { useState,useRef, type ReactNode} from 'react'
-import Vinyl from '../components/vinyl'
-import type { VinylHandle } from '../components/vinyl'
+import Vinyl from './components/vinyl'
+import type { VinylHandle } from './components/vinyl'
+
 
 
 // --- Adaptable Section Title ---
@@ -153,8 +154,8 @@ export default function App() {
   const vinylRef = useRef<VinylHandle>(null)
 
 
-  const targetEmail = 'your-email@gmail.com'
-  const secondEmail = 'management-email@gmail.com'
+  const targetEmail = 'sensiwarriors@gmail.com'
+  const secondEmail = 'sensibledj@gmail.com'
   const subject = encodeURIComponent('DJ Sensi Booking Inquiry')
   const body = encodeURIComponent(`Hi DJ Sensi,\n\nI want to inquire about booking you for an upcoming event...\n\n`)
   const mailtoString = `mailto:${targetEmail}?cc=${secondEmail}&subject=${subject}&body=${body}`
@@ -238,35 +239,60 @@ export default function App() {
 
 
 
-    {/* CLUB Sleeve */}
-    <div
-      className={`theme-sleeve theme-club ${showThemes ? 'active' : ''}`}
-      onClick={() => {
-        vinylRef.current?.stop()
-        vinylRef.current?.reset()
-        setTheme('club')
-        setAudioFile('/assets/vinyl_loop.mp3')
-        setShowThemes(false)
-      }}
-    >
-      <img src="/assets/record_theme_club.png" alt="club sleeve" />
-      <span className="theme-label">Club</span>
-    </div>
+  {/* CLUB Sleeve */}
+<div
+  className={`theme-sleeve theme-club ${showThemes ? 'active' : ''}`}
+  onClick={() => {
+    // 1. Fade out BEFORE React re-renders
+    vinylRef.current?.fadeOut?.()
 
-    {/* LOUNGE Sleeve */}
-    <div
-      className={`theme-sleeve theme-lounge ${showThemes ? 'active' : ''}`}
-      onClick={() => {
-        vinylRef.current?.stop()
-        vinylRef.current?.reset()
-        setTheme('lounge')
-        setAudioFile('/assets/vinyl_loop2.mp3')
-        setShowThemes(false)
-      }}
-    >
-      <img src="/assets/record_theme_lounge.png" alt="lounge sleeve" />
-      <span className="theme-label">Lounge</span>
-    </div>
+    // 2. Stop audio cleanly
+    setTimeout(() => {
+      vinylRef.current?.stop?.()
+
+      // 3. Now safely change theme + track
+      setTheme('club')
+      setAudioFile('/assets/vinyl_loop.mp3')
+      setShowThemes(false)
+
+      // 4. Reset AFTER new buffer loads
+      setTimeout(() => {
+        vinylRef.current?.reset?.()
+      }, 60)
+    }, 60)
+  }}
+>
+  <img src="/assets/record_theme_club.png" alt="club sleeve" />
+  <span className="theme-label">Club</span>
+</div>
+
+{/* LOUNGE Sleeve */}
+<div
+  className={`theme-sleeve theme-lounge ${showThemes ? 'active' : ''}`}
+  onClick={() => {
+    // 1. Fade out BEFORE React re-renders
+    vinylRef.current?.fadeOut?.()
+
+    // 2. Stop audio cleanly
+    setTimeout(() => {
+      vinylRef.current?.stop?.()
+
+      // 3. Now safely change theme + track
+      setTheme('lounge')
+      setAudioFile('/assets/vinyl_loop2.mp3')
+      setShowThemes(false)
+
+      // 4. Reset AFTER new buffer loads
+      setTimeout(() => {
+        vinylRef.current?.reset?.()
+      }, 60)
+    }, 60)
+  }}
+>
+  <img src="/assets/record_theme_lounge.png" alt="lounge sleeve" />
+  <span className="theme-label">Lounge</span>
+</div>
+
 
   </div>
 </nav>
@@ -362,7 +388,7 @@ export default function App() {
             <PhotoGallery theme={theme} />
           </section>
 
-          {/* Bio Section */}
+          {/* Bio Section
           <section className="w-full">
             <SectionTitle theme={theme}>The Sound</SectionTitle>
             <div className="text-base text-zinc-300 leading-relaxed space-y-4 font-normal">
@@ -385,7 +411,51 @@ His vinyl-driven approach seamlessly bridges these genres with the high-energy p
     For DJ bookings, please reach out via email or my socials.
   </p>
             </div>
-          </section>
+          </section> */}
+
+{/* Bio Section */}
+<section className="w-full">
+  <SectionTitle theme={theme}>The Sound</SectionTitle>
+
+  <div className="text-base text-zinc-300 leading-relaxed space-y-6 font-normal">
+
+    {/* Core Sound */}
+    <div className="space-y-3">
+      <h3 className="text-sm font-mono uppercase tracking-wider text-zinc-400">Musical Identity</h3>
+      <p>
+        With over 20 years behind the decks, DJ Sensi blends Hip Hop, Funk, and Soul with the high‑energy pulse of Jungle and Drum & Bass. 
+        His vinyl‑driven style keeps his roots at the forefront while adapting seamlessly to any environment — from clubs to lounges to breweries.
+      </p>
+    </div>
+
+    {/* Supported Artists */}
+    <div className="space-y-3">
+      <h3 className="text-sm font-mono uppercase tracking-wider text-zinc-400">Supported Artists</h3>
+      <p>
+        Sensi has shared stages with iconic acts including Afrika Bambaataa, Wu‑Tang Clan (Killa Beez), DJ Hype, Krafty Kuts, DJ Yoda, and 5× DMC Champion DJ Craze.
+        As one half of Sensi Warriors, he has also supported Jungle heavyweights Mickey Finn, General Levy, Aphrodite, and Ed Solo.
+      </p>
+    </div>
+
+    {/* Tours & Countries */}
+    <div className="space-y-3">
+      <h3 className="text-sm font-mono uppercase tracking-wider text-zinc-400">International Tours</h3>
+      <p>
+        His journey has taken him across Europe, the UK, South‑East Asia, and Australia — including touring with Eminem’s super‑group Slaughterhouse 
+        (Royce Da 5’9, Joe Budden, Joell Ortiz, Crooked I). A career highlight includes performing as Scribe’s guest DJ on tour in Melbourne.
+      </p>
+    </div>
+
+    {/* Closing Line */}
+    <p className={`text-sm font-mono uppercase tracking-wide border-t border-zinc-900/80 pt-4 transition-colors duration-500 ${
+      theme === 'club' ? 'text-fuchsia-400' : 'text-amber-400'
+    }`}>
+      For DJ bookings, please reach out via email or my socials.
+    </p>
+
+  </div>
+</section>
+
 
           {/* Booking Block */}
           <section id="booking" className="w-full">
@@ -399,7 +469,7 @@ His vinyl-driven approach seamlessly bridges these genres with the high-energy p
                   Click below to open your email client with our official performance specification template pre-loaded.
                 </p>
                 <a 
-                  href="mailto:sensiwarriors@gmail.com"
+                  href={mailtoString}
                   className={`inline-block w-full text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl hover:scale-[1.01] active:scale-[0.99] text-center transition-all duration-500 shadow-xl ${
                     theme === 'club' 
                       ? 'bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 shadow-fuchsia-500/10' 
@@ -412,47 +482,104 @@ His vinyl-driven approach seamlessly bridges these genres with the high-energy p
             </Card>
           </section>
 
-          {/* Audio Network */}
-          <section className="w-full">
-            <SectionTitle theme={theme}>Audio Network</SectionTitle>
-            <div className="flex flex-col gap-6 w-full">
-              
-              <div 
-                className="relative w-full rounded-2xl p-4 md:p-8 overflow-hidden bg-cover bg-center border border-white/5 shadow-2xl flex flex-col gap-4"
-                style={{ backgroundImage: `linear-gradient(rgba(10, 10, 12, 0.92), rgba(10, 10, 12, 0.92)), url('/assets/boombox for mixcloud widget.png')` }}
-              >
-                <div className="w-full bg-black/40 rounded-lg p-1 backdrop-blur-sm border border-white/5">
-                  <iframe
-                    width="100%"
-                    height="60"
-                    src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2FBazzinvaders%2Fsaturday-night-fire-vol-1%2F"
-                    allow="encrypted-media; fullscreen; autoplay"
-                    className="w-full h-[60px]"
-                    title="DJ Sensi Mix 1"
-                  />
-                </div>
-                <div className="w-full bg-black/40 rounded-lg p-1 backdrop-blur-sm border border-white/5">
-                  <iframe
-                    width="100%"
-                    height="60"
-                    src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2FSensi_Warriors%2Flos-hermanos-del-bajo-mixtape-vol-1%2F"
-                    allow="encrypted-media; fullscreen; autoplay"
-                    className="w-full h-[60px]"
-                    title="DJ Sensi Mix 2"
-                  />
-                </div>
-                <div className="w-full bg-black/40 rounded-lg p-1 backdrop-blur-sm border border-white/5">
-                  <iframe
-                    width="100%"
-                    height="60"
-                    src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2FBazzinvaders%2Fultra-music-festival-aerial7-dj-competition%2F"
-                    allow="encrypted-media; fullscreen; autoplay"
-                    className="w-full h-[60px]"
-                    title="DJ Sensi Mix 3"
-                  />
-                </div>
-              </div>
 
+
+{/* Audio Network */}
+<section className="w-full">
+  <SectionTitle theme={theme}>Audio Network</SectionTitle>
+
+  <div className="flex flex-col gap-3 w-full">
+
+    {/* Mixcloud Widgets */}
+    <div
+      className="relative w-full rounded-2xl p-4 md:p-8 overflow-hidden bg-cover bg-center border border-white/5 shadow-2xl flex flex-col gap-4"
+      style={{
+        backgroundImage:
+          `linear-gradient(rgba(10, 10, 12, 0.92), rgba(10, 10, 12, 0.92)), url('/assets/boombox for mixcloud widget.png')`
+      }}
+    >
+      <div className="w-full bg-black/40 rounded-lg p-1 backdrop-blur-sm border border-white/5">
+        <iframe
+          width="100%"
+          height="60"
+          src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2FBazzinvaders%2Fsaturday-night-fire-vol-1%2F"
+          allow="encrypted-media; fullscreen; autoplay"
+          className="w-full h-[60px]"
+          title="DJ Sensi Mix 1"
+        />
+      </div>
+
+      <div className="w-full bg-black/40 rounded-lg p-1 backdrop-blur-sm border border-white/5">
+        <iframe
+          width="100%"
+          height="60"
+          src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2FSensi_Warriors%2Flos-hermanos-del-bajo-mixtape-vol-1%2F"
+          allow="encrypted-media; fullscreen; autoplay"
+          className="w-full h-[60px]"
+          title="DJ Sensi Mix 2"
+        />
+      </div>
+
+      <div className="w-full bg-black/40 rounded-lg p-1 backdrop-blur-sm border border-white/5">
+        <iframe
+          width="100%"
+          height="60"
+          src="https://player-widget.mixcloud.com/widget/iframe/?hide_cover=1&mini=1&feed=%2FBazzinvaders%2Fultra-music-festival-aerial7-dj-competition%2F"
+          allow="encrypted-media; fullscreen; autoplay"
+          className="w-full h-[60px]"
+          title="DJ Sensi Mix 3"
+        />
+      </div>
+    </div>
+
+
+{/* SENSI-VISION TV */}
+<div className="relative w-full max-w-[700px] mx-auto mt-2 aspect-[4/3]">
+
+  {/* IFRAME — lower z-index, but clickable */}
+  <div
+    className="
+      absolute
+      top-[16%]
+      left-[14%]
+      w-[55%]
+      h-[58%]
+      rounded-md
+      overflow-hidden
+      bg-black
+      z-[1]
+    "
+  >
+    <iframe
+      className="w-full h-full"
+       src="https://www.youtube.com/embed/q-5es7NtH8c?si=D3OwHuOmca1KwEXo"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+    />
+  </div>
+
+  {/* TV FRAME — visually in front, but click-through */}
+  <img
+    src="/assets/sensi-vision-tv.png"
+    alt="SENSI-VISION TV Frame"
+    className="
+      absolute
+      inset-0
+      z-[10]
+      w-full
+      h-full
+      object-contain
+      select-none
+      pointer-events-none
+    "
+  />
+
+    </div>
+
+  </div>
+</section>
+
+<section>
               {/* Social Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
               <a href="https://www.youtube.com/@SensiWarriors" target="_blank" rel="noreferrer" className="block w-full">
@@ -503,7 +630,6 @@ His vinyl-driven approach seamlessly bridges these genres with the high-energy p
                 </a>
               </div>
 
-            </div>
           </section>
         </main>
 
