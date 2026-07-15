@@ -159,6 +159,17 @@ const Vinyl = forwardRef<VinylHandle, VinylProps>(function Vinyl(
     setSpeed(0)
   }, [speed, spinning, dragging])
 
+  // ⭐ POP-FREE STOP TIMEOUT (5 seconds idle)
+  useEffect(() => {
+    if (spinning || dragging) return
+
+    const timeout = setTimeout(() => {
+      fadeOut() // smooth fade-out from vinylEngine
+    }, 5000)
+
+    return () => clearTimeout(timeout)
+  }, [spinning, dragging])
+
   const handleClick = async () => {
     await startVinyl()
     setSpinning(prev => !prev)

@@ -1,24 +1,11 @@
 {
+  "extends": "./tsconfig.json",
+
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-
-    "jsx": "react-jsx",
-
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true
+    "composite": true,
+    "tsBuildInfoFile": "./tsconfig.app.tsbuildinfo"
   },
 
-  "include": [
-    "src",
-    "public/worklets/vinylProcessor.js"
-  ]
+  "include": ["src", "public/worklets/vinylProcessor.js"],
+  "exclude": ["node_modules"]
 }
