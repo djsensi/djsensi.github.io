@@ -92,3 +92,32 @@ export function fadeOut(): void {
   gainNode.gain.setValueAtTime(gainNode.gain.value, now)
   gainNode.gain.linearRampToValueAtTime(0, now + 0.05)
 }
+
+export function destroyVinylEngine() {
+  try {
+    // ⭐ Tell the worklet to begin graceful shutdown
+    if (workletNode) {
+      workletNode.port.postMessage({ type: "shutdown" })
+    }
+
+    // ⭐ Disconnect nodes
+    try { workletNode?.disconnect() } catch { }
+    try { gainNode?.disconnect() } catch { }
+
+    // ⭐ Close the AudioContext
+    if (audioCtx && audioCtx.state !== "closed") {
+      audioCtx.suspend().catch(() => { })
+      audioCtx.close().catch(() => { })
+    }
+  } catch (e) {
+    console.warn("Vinyl teardown error:", e)
+  }
+
+  // Reset engine state
+  audioCtx = null
+  workletNode = null
+  gainNode = null
+  initialized = false
+  warmed = false
+}
+

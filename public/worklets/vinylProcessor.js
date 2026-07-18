@@ -10,6 +10,11 @@ class VinylProcessor extends AudioWorkletProcessor {
     // compressor state
     this.compGain = 1.0
 
+    // shutdown state
+    this.stopping = false
+    this.shutdownGain = 1.0
+
+
     this.port.onmessage = (event) => {
       const data = event.data
 
@@ -25,6 +30,11 @@ class VinylProcessor extends AudioWorkletProcessor {
           this.speed = this.speed * 0.85 + data.speed * 0.15
         }
       }
+      // ⭐ ADD THIS — graceful shutdown trigger
+      if (data.type === "shutdown") {
+        this.stopping = true
+        this.shutdownGain = 1.0
+      }
     }
   }
 
@@ -37,9 +47,9 @@ class VinylProcessor extends AudioWorkletProcessor {
     const i2 = (i0 + 2) % length
 
     const xm1 = buffer[im1]
-    const x0  = buffer[i0]
-    const x1  = buffer[i1]
-    const x2  = buffer[i2]
+    const x0 = buffer[i0]
+    const x1 = buffer[i1]
+    const x2 = buffer[i2]
 
     const c0 = x0
     const c1 = 0.5 * (x1 - xm1)
@@ -72,6 +82,17 @@ class VinylProcessor extends AudioWorkletProcessor {
       }
 
       sample /= oversample
+
+
+      // ⭐ ADD THIS — graceful shutdown ramp
+      if (this.stopping) {
+        sample *= this.shutdownGain
+        this.shutdownGain -= 0.0005
+
+        if (this.shutdownGain <= 0) {
+          return false   // ⭐ stops the processor safely
+        }
+      }
 
       // --- ULTRA SCRATCH GAIN CURVE ---
       const absSpeed = Math.abs(this.speed)

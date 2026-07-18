@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 're
 import * as THREE from 'three'
 
 // Audio engine (persistent)
-import { initVinylEngine, startVinyl, setSpeed, resetVinyl, fadeOut } from "../audio/vinylEngine"
+import { initVinylEngine, startVinyl, setSpeed, resetVinyl, fadeOut, destroyVinylEngine } from "../audio/vinylEngine"
 
 export interface VinylHandle {
   stop: () => void
@@ -174,6 +174,12 @@ const Vinyl = forwardRef<VinylHandle, VinylProps>(function Vinyl(
     await startVinyl()
     setSpinning(prev => !prev)
   }
+  
+  useEffect(() => {
+    return () => {
+      destroyVinylEngine()
+    }
+  }, [])
 
   return (
     <div
